@@ -18,7 +18,7 @@ public class CdkConfigStack extends Stack {
                 .runtime(Runtime.JAVA_11)
                 .architecture(Architecture.X86_64)
                 .handler(lambdaHandler)
-                .code(Code.fromAsset("../../lambda/target/lambda-1.0.jar"))
+                .code(Code.fromAsset("../lambda/target/lambda-1.0.jar"))
                 .memorySize(memory)
                 .build();
     }
