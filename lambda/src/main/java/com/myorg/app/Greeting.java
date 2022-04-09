@@ -10,28 +10,25 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 
 
 public class Greeting {
-    Region clientRegion = Region.US_EAST_1;
-    String bucketName = "just-testing-photos-walrus-code";
+    private static final Region clientRegion = Region.US_EAST_1;
+    private static final String bucketName = "just-testing-photos-walrus-code";
 
     public String onEvent(Map<String, String> event) {
         System.out.println("received: " + event);
         String objectKey = event.get("objectKey");
-
         if (objectKey == null) {
             throw new RuntimeException("objectKey not provided!");
         }
-
-        S3Presigner presigner = S3Presigner.builder()
-                .region(clientRegion)
-                .build();
-
-        signBucket(presigner, bucketName, objectKey);
-        presigner.close();
+        createPresignedUrl(objectKey);
 
         return "Event processed !";
     }
 
-    private static void signBucket(S3Presigner presigner, String bucketName, String objectKey) {
+    private static void createPresignedUrl(String objectKey) {
+        S3Presigner presigner = S3Presigner.builder()
+                .region(clientRegion)
+                .build();
+
         PutObjectRequest objectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key(objectKey)
@@ -49,5 +46,7 @@ public class Greeting {
         System.out.println("Presigned URL to upload a file to: " +myURL);
         System.out.println("Which HTTP method needs to be used when uploading a file: " +
                 presignedRequest.httpRequest().method());
+
+        presigner.close();
     }
 }
