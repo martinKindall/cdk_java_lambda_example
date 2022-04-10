@@ -11,7 +11,7 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 
 public class Greeting {
     private static final Region clientRegion = Region.US_EAST_1;
-    private static final String bucketName = "just-testing-photos-walrus-code";
+    private static final String bucketName = System.getenv("bucket");
 
     public String onEvent(Map<String, String> event) {
         System.out.println("received: " + event);
