@@ -17,6 +17,7 @@ final class Payload {
 
     final static class Params {
         String objectKey;
+        String mimeType;
     }
 }
 
@@ -30,14 +31,20 @@ public class Greeting {
         Payload.Params params = getParams(request);
 
         if (params == null || params.objectKey == null) {
-            return Map.of("statusCode", 400, "body", "Bad input: objectKey missing");
+            return Map.of(
+                    "statusCode", 400,
+                    "body", "Bad input: objectKey missing",
+                    "headers", Map.of("Access-Control-Allow-Origin", "http://localhost:3000"));
         }
-        String url = createPresignedUrl(params.objectKey);
+        String url = createPresignedUrl(params.objectKey, params.mimeType);
 
-        return Map.of("body", "Success: " + params.objectKey, "url", url);
+        return Map.of(
+                "statusCode", 200,
+                "body", url,
+                "headers", Map.of("Access-Control-Allow-Origin", "http://localhost:3000"));
     }
 
-    private static String createPresignedUrl(String objectKey) {
+    private static String createPresignedUrl(String objectKey, String mimeType) {
         S3Presigner presigner = S3Presigner.builder()
                 .region(clientRegion)
                 .build();
@@ -45,7 +52,7 @@ public class Greeting {
         PutObjectRequest objectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key(objectKey)
-                .contentType("text/plain")
+                .contentType(mimeType)
                 .build();
 
         PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
