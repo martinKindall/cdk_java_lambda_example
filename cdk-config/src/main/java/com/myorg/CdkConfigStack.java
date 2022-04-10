@@ -1,6 +1,8 @@
 package com.myorg;
 
 import software.amazon.awscdk.Duration;
+import software.amazon.awscdk.services.iam.AnyPrincipal;
+import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.*;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.Bucket;
@@ -8,6 +10,7 @@ import software.constructs.Construct;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 
+import java.util.List;
 import java.util.Map;
 
 
@@ -19,6 +22,13 @@ public class CdkConfigStack extends Stack {
         super(scope, id, props);
 
         Bucket bucket = Bucket.Builder.create(this, "MyBucket").build();
+        PolicyStatement policyStatement = PolicyStatement.Builder.create()
+                .principals(List.of(new AnyPrincipal()))
+                .actions(List.of("s3:GetObject"))
+                .resources(List.of(bucket.getBucketArn() + "/*"))
+                .build();
+
+        bucket.addToResourcePolicy(policyStatement);
 
         var myLambda = Function.Builder.create(this, "myLambda")
                 .runtime(Runtime.JAVA_11)
