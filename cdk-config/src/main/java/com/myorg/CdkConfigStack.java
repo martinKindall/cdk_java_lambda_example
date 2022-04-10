@@ -1,6 +1,10 @@
 package com.myorg;
 
 import software.amazon.awscdk.Duration;
+import software.amazon.awscdk.services.apigatewayv2.alpha.AddRoutesOptions;
+import software.amazon.awscdk.services.apigatewayv2.alpha.HttpApi;
+import software.amazon.awscdk.services.apigatewayv2.alpha.HttpMethod;
+import software.amazon.awscdk.services.apigatewayv2.integrations.alpha.HttpLambdaIntegration;
 import software.amazon.awscdk.services.iam.AnyPrincipal;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.*;
@@ -18,10 +22,21 @@ public class CdkConfigStack extends Stack {
     static int memory = 256;
     static String lambdaHandler = "com.myorg.app.Greeting::onEvent";
 
+    Bucket bucket;
+    Function lambda;
+
     public CdkConfigStack(final Construct scope, final String id, final StackProps props) {
         super(scope, id, props);
 
-        Bucket bucket = Bucket.Builder.create(this, "MyBucket").build();
+        setupBucket();
+        setupLambda();
+        setupHttpApi();
+
+        bucket.grantPut(lambda);
+    }
+
+    private void setupBucket() {
+        bucket = Bucket.Builder.create(this, "MyBucket").build();
         PolicyStatement policyStatement = PolicyStatement.Builder.create()
                 .principals(List.of(new AnyPrincipal()))
                 .actions(List.of("s3:GetObject"))
@@ -29,8 +44,10 @@ public class CdkConfigStack extends Stack {
                 .build();
 
         bucket.addToResourcePolicy(policyStatement);
+    }
 
-        var myLambda = Function.Builder.create(this, "myLambda")
+    private void setupLambda() {
+        lambda = Function.Builder.create(this, "myLambda")
                 .runtime(Runtime.JAVA_11)
                 .architecture(Architecture.X86_64)
                 .handler(lambdaHandler)
@@ -39,7 +56,15 @@ public class CdkConfigStack extends Stack {
                 .environment(Map.of("bucket", bucket.getBucketName()))
                 .timeout(Duration.seconds(10))
                 .build();
+    }
 
-        bucket.grantPut(myLambda);
+    private void setupHttpApi() {
+        HttpApi httpApi = new HttpApi(this, "HttpApi");
+        HttpLambdaIntegration booksIntegration = new HttpLambdaIntegration("BooksIntegration", lambda);
+        httpApi.addRoutes(AddRoutesOptions.builder()
+                .path("/getPresignedUrl")
+                .methods(List.of(HttpMethod.GET))
+                .integration(booksIntegration)
+                .build());
     }
 }
